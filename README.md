@@ -2,7 +2,7 @@
 
 ## Projektbeschreibung
 
-Dieses Projekt konzentriert sich auf die Entwicklung eines Modells zur Erkennung von Bot-Accounts in sozialen Netzwerken, insbesondere auf Reddit. Ziel ist es, ein Modell zu trainieren, das zwischen echten Nutzern und Bot-Accounts unterscheidet, indem es öffentlich zugängliche Daten (Reddit-Posts) und einen Trainingsdatensatz (Kaggle Twitter-Datensatz) verwendet.
+Dieses Projekt konzentriert sich auf die Entwicklung eines Modells zur Erkennung von Bot-Accounts in sozialen Netzwerken. Ziel ist es, ein Modell zu trainieren, das zwischen echten Nutzern und Bot-Accounts unterscheidet, indem es öffentlich zugängliche Daten (Reddit-Posts) und einen Trainingsdatensatz (Kaggle Twitter-Datensatz) verwendet.
 
 ## Ziele
 
