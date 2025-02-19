@@ -13,11 +13,15 @@ reddit = praw.Reddit(client_id=CLIENT_ID,
 
 def fetch_reddit_data(subreddit_name, limit=10):
     """
-    Ruft neue Beiträge eines Subreddits ab und formatiert diese.
-    Die Spalte 'title' wird in 'Tweet' umbenannt, um mit unserem Modell übereinzustimmen.
+    Ruft Beiträge eines Subreddits ab.
+    Es werden 10 Beiträge mit .new() und 10 Beiträge mit .hot() abgefragt,
+    jeweils versehen mit einem 'source'-Feld, das angibt, ob es sich um
+    neue oder heiße Beiträge handelt.
     """
     subreddit = reddit.subreddit(subreddit_name)
     posts = []
+    
+    # 10 neueste Beiträge
     for post in subreddit.new(limit=limit):
         posts.append({
             'Tweet': post.title,  # Umbenennung: title -> Tweet
@@ -25,8 +29,22 @@ def fetch_reddit_data(subreddit_name, limit=10):
             'score': post.score,
             'id': post.id,
             'comments': post.num_comments,
-            'created': post.created_utc
+            'created': post.created_utc,
+            'source': 'new'
         })
+    
+    # 10 Hot-Beiträge
+    for post in subreddit.hot(limit=limit):
+        posts.append({
+            'Tweet': post.title,
+            'url': post.url,
+            'score': post.score,
+            'id': post.id,
+            'comments': post.num_comments,
+            'created': post.created_utc,
+            'source': 'hot'
+        })
+        
     return posts
 
 def fetch_reddit_data_with_retry(subreddit_name, limit=10):
@@ -43,8 +61,8 @@ def fetch_reddit_data_with_retry(subreddit_name, limit=10):
 
 def get_reddit_data(subreddit_name='learnpython', limit=10):
     """
-    Ruft die Reddit-Daten ab und gibt sie als DataFrame zurück.
-    Da keine 'Bot Label'-Information vorliegt, erfolgt hier nur die Datenausgabe.
+    Ruft Reddit-Daten ab und gibt sie als DataFrame zurück.
+    Dabei werden 10 neue und 10 Hot-Beiträge abgefragt.
     """
     posts = fetch_reddit_data_with_retry(subreddit_name, limit)
     df = pd.DataFrame(posts)
@@ -52,4 +70,10 @@ def get_reddit_data(subreddit_name='learnpython', limit=10):
 
 if __name__ == "__main__":
     df = get_reddit_data('learnpython', limit=10)
-    print(df[['Tweet']])
+    # Ausgabe der gruppierten Ergebnisse
+    if 'source' in df.columns:
+        for source, group in df.groupby("source"):
+            print(f"\n--- Beiträge aus '{source}' ---")
+            print(group[['Tweet']])
+    else:
+        print(df[['Tweet']])

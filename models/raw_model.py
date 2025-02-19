@@ -91,6 +91,8 @@ def evaluate_model(model, X_test, y_test, dataset_name="Testdaten"):
 def test_on_reddit_data(model):
     """
     Holt Daten über die Reddit API und wendet das Modell an.
+    Die Daten werden nach 'source' gruppiert: 10 Beiträge aus .new() und 10 aus .hot().
+    Für jede Gruppe wird ein Header ausgegeben.
     Falls kein 'Bot Label' vorhanden ist, werden lediglich die Vorhersagen ausgegeben.
     """
     if get_reddit_data is None:
@@ -98,8 +100,8 @@ def test_on_reddit_data(model):
         return
 
     print("\nHole Reddit-Daten...")
-    reddit_data = get_reddit_data()
-
+    reddit_data = get_reddit_data(subreddit_name="learnpython", limit=10)
+    
     # Falls reddit_data nicht als DataFrame geliefert wird, versuchen wir es umzuwandeln.
     if not isinstance(reddit_data, pd.DataFrame):
         reddit_data = pd.DataFrame(reddit_data)
@@ -108,15 +110,24 @@ def test_on_reddit_data(model):
         print("Reddit-Daten enthalten nicht die erforderliche Spalte ('Tweet').")
         return
 
-    X_reddit = reddit_data["Tweet"].fillna("")
-
-    print("\n--- Vorhersagen für Reddit-Daten ---")
-    print("Mapping: 0 = Real Account, 1 = Bot Account")
+    print("\nMapping der Vorhersagen: 0 = Real Account, 1 = Bot Account")
     
-    if "Bot Label" in reddit_data.columns:
-        y_reddit = reddit_data["Bot Label"]
-        evaluate_model(model, X_reddit, y_reddit, dataset_name="Reddit-Daten")
+    if "source" in reddit_data.columns:
+        # Gruppierung nach Quelle (new/hot)
+        for source, group in reddit_data.groupby("source"):
+            if source == 'new':
+                header = "Die 10 neuesten Beiträge (.new)"
+            elif source == 'hot':
+                header = "Die 10 heißesten Beiträge (.hot)"
+            else:
+                header = f"Beiträge aus '{source}'"
+            print(f"\n--- {header} ---")
+            X_group = group["Tweet"].fillna("")
+            predictions = model.predict(X_group)
+            for tweet, pred in zip(X_group, predictions):
+                print(f"Text: {tweet[:50]}... -> Vorhersage: {pred}")
     else:
+        X_reddit = reddit_data["Tweet"].fillna("")
         predictions = model.predict(X_reddit)
         for tweet, pred in zip(X_reddit, predictions):
             print(f"Text: {tweet[:50]}... -> Vorhersage: {pred}")
