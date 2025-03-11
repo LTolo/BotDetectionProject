@@ -1,181 +1,134 @@
+# Dieses Skript führt ein Fine-Tuning eines vortrainierten spaCy Transformer-Modells (en_core_web_trf) zur Erkennung von Bot-Accounts in Twitter-Daten durch.
+# Es lädt einen CSV-Datensatz, konvertiert die Daten in das spaCy-Trainingsformat, teilt die Daten auf,
+# trainiert das Modell und bewertet es.
+# Optional testet es das Modell auf Daten, die über die Reddit API abgerufen wurden.
+# Es verwendet spaCy für das Modelltraining und scikit-learn für die Datenaufteilung.
+
+
 import os
-import sys
 import random
-import json
-import pandas as pd
-import numpy as np
-import tensorflow as tf
-from tensorflow.keras.layers import (Input, Dense, Concatenate, Embedding, LSTM,
-                                    GlobalAveragePooling1D, Dropout, Bidirectional)
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import TextVectorization, Normalization
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.callbacks import EarlyStopping
 import spacy
+from spacy.util import minibatch, compounding
+import pandas as pd
+from sklearn.model_selection import train_test_split
 
-# Pfad-Anpassung
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(os.path.join(base_dir, "api"))
-
-# Reddit API Import
+# Falls vorhanden, versuche die Reddit API zu importieren
 try:
     from api.reddit_api import get_reddit_data
 except ImportError:
-    print("Warnung: reddit_api konnte nicht importiert werden. Stelle sicher, dass der Ordner 'api' im PYTHONPATH ist.")
+    print("Warnung: reddit_api konnte nicht importiert werden. "
+          "Stelle sicher, dass der Ordner 'api' im PYTHONPATH ist.")
     get_reddit_data = None
 
-# spaCy importieren und Sprachmodell laden
-nlp = spacy.load("en_core_web_sm")
-
-
-def clean_text_spacy(text):
-    """Bereinigt einen Text mittels spaCy."""
-    doc = nlp(text)
-    tokens = [token.lemma_.lower() for token in doc if not token.is_stop and not token.is_punct]
-    return " ".join(tokens)
-
-
-def load_community_notes(file_path):
-    """Lädt die Community Notes aus der JSON-Datei."""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            notes = json.load(f)
-        return notes['bot_notes'], notes['non_bot_notes']
-    except Exception as e:
-        print(f"Fehler beim Laden der Community Notes: {e}")
-        return [], []
-
-
-def assign_community_note(label, bot_notes, non_bot_notes):
-    """Weist eine Community Note basierend auf dem Label zu."""
-    if random.random() < 0.05:
-        all_notes = bot_notes + non_bot_notes
-        return random.choice(all_notes)
-    else:
-        return random.choice(bot_notes) if label == 1 else random.choice(non_bot_notes)
-
-
-def load_and_preprocess_data(data_path, notes_file_path):
-    """Lädt und verarbeitet die Daten aus der CSV-Datei."""
-    df = pd.read_csv(data_path)
+def load_data(file_path):
+    """
+    Lädt den CSV-Datensatz und konvertiert ihn in das spaCy-Trainingsformat.
+    Jeder Eintrag ist ein Tupel (Text, {"cats": {"BOT": bool, "REAL": bool}}).
+    """
+    df = pd.read_csv(file_path)
     df["Tweet"] = df["Tweet"].astype(str)
     df["Bot Label"] = df["Bot Label"].astype(int)
+    
+    data = []
+    for tweet, label in zip(df["Tweet"], df["Bot Label"]):
+        # Wir definieren die Kategorien: True für BOT, False für REAL
+        cats = {"BOT": label == 1, "REAL": label == 0}
+        data.append((tweet, {"cats": cats}))
+    print(f"{len(data)} Trainingsbeispiele geladen.")
+    return data
 
-    # Community Notes laden
-    bot_notes, non_bot_notes = load_community_notes(notes_file_path)
-    df["community_notes"] = df["Bot Label"].apply(lambda x: assign_community_note(x, bot_notes, non_bot_notes))
+def evaluate(nlp, data):
+    """
+    Führt eine einfache Evaluation durch, indem für jeden Text die Kategorie mit
+    dem höheren Score als Vorhersage verwendet wird.
+    """
+    correct = 0
+    total = 0
+    for text, annotations in data:
+        doc = nlp(text)
+        predicted = doc.cats
+        pred_label = "BOT" if predicted["BOT"] >= predicted["REAL"] else "REAL"
+        true_label = "BOT" if annotations["cats"]["BOT"] else "REAL"
+        if pred_label == true_label:
+            correct += 1
+        total += 1
+    return correct / total if total > 0 else 0.0
 
-    df["cleaned_Tweet"] = df["Tweet"].apply(clean_text_spacy)
+def test_on_reddit_data(nlp):
+    """
+    Holt Daten über die Reddit API, falls verfügbar, und wendet das feinabgestimmte Modell an.
+    """
+    if get_reddit_data is None:
+        print("Reddit API nicht verfügbar. Überspringe Reddit-Test.")
+        return
 
-    numeric_features = ["Retweet Count", "Mention Count", "Follower Count", "Verified"]
-    for col in numeric_features:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype("float32")
+    print("\nHole Reddit-Daten...")
+    reddit_data = get_reddit_data(subreddit_name="learnpython", limit=10)
 
-    train_df = df.sample(frac=0.8, random_state=42)
-    test_df = df.drop(train_df.index)
+    if not isinstance(reddit_data, pd.DataFrame):
+        reddit_data = pd.DataFrame(reddit_data)
 
-    train_text = train_df["cleaned_Tweet"].values
-    test_text = test_df["cleaned_Tweet"].values
+    if "Tweet" not in reddit_data.columns:
+        print("Reddit-Daten enthalten nicht die erforderliche Spalte ('Tweet').")
+        return
 
-    train_comm = train_df["community_notes"].values
-    test_comm = test_df["community_notes"].values
-
-    train_numeric = train_df[numeric_features].values.astype("float32")
-    test_numeric = test_df[numeric_features].values.astype("float32")
-
-    y_train = train_df["Bot Label"].values
-    y_test = test_df["Bot Label"].values
-
-    return train_text, test_text, train_comm, test_comm, train_numeric, test_numeric, y_train, y_test, numeric_features
-
-
-def build_and_train_model(train_text, train_comm, train_numeric, y_train, numeric_features):
-    """Erstellt und trainiert das TensorFlow-Modell."""
-    max_tokens = 10000
-    output_sequence_length = 150
-    text_vectorizer = TextVectorization(max_tokens=max_tokens, output_mode="int", output_sequence_length=output_sequence_length)
-    text_vectorizer.adapt(train_text)
-
-    normalizer = Normalization(axis=-1)
-    normalizer.adapt(train_numeric)
-
-    community_vectorizer = TextVectorization(max_tokens=5000, output_mode="int", output_sequence_length=50)
-    community_vectorizer.adapt(train_comm)
-
-    text_input = Input(shape=(1,), dtype=tf.string, name="text_input")
-    x = text_vectorizer(text_input)
-    x = Embedding(input_dim=max_tokens, output_dim=128, mask_zero=True)(x)
-    x = Bidirectional(LSTM(64))(x)
-    x = Dropout(0.4)(x)
-
-    numeric_input = Input(shape=(len(numeric_features),), name="numeric_input")
-    norm_numeric = normalizer(numeric_input)
-
-    community_input = Input(shape=(1,), dtype=tf.string, name="community_input")
-    comm = community_vectorizer(community_input)
-    comm = Embedding(input_dim=5000, output_dim=32, mask_zero=True)(comm)
-    comm = GlobalAveragePooling1D()(comm)
-    comm = Dense(32, activation="relu")(comm)
-
-    combined = Concatenate()([x, norm_numeric, comm])
-    z = Dense(128, activation="relu")(combined)
-    z = Dropout(0.4)(z)
-    z = Dense(64, activation="relu")(z)
-    z = Dropout(0.4)(z)
-    output = Dense(1, activation="sigmoid")(z)
-
-    model = Model(inputs=[text_input, numeric_input, community_input], outputs=output)
-    model.compile(optimizer=Adam(learning_rate=0.001), loss="binary_crossentropy", metrics=["accuracy"])
-
-    model.summary()
-
-    batch_size = 32
-    epochs = 100
-    early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
-
-    history = model.fit(
-        {"text_input": train_text, "numeric_input": train_numeric, "community_input": train_comm},
-        y_train,
-        validation_split=0.1,
-        epochs=epochs,
-        batch_size=batch_size,
-        callbacks=[early_stop]
-    )
-    return model
-
-
-def evaluate_model(model, test_text, test_comm, test_numeric, y_test):
-    """Bewertet das Modell auf den Testdaten."""
-    loss, test_acc = model.evaluate(
-        {"text_input": test_text, "numeric_input": test_numeric, "community_input": test_comm},
-        y_test
-    )
-    print(f"Test Accuracy: {test_acc:.4f}")
-
-    predictions = model.predict(
-        {"text_input": test_text, "numeric_input": test_numeric, "community_input": test_comm})
-    predicted_labels = (predictions > 0.5).astype(int)
-
-    for i in range(5):
-        print("Cleaned Tweet:", test_text[i])
-        print("Community Note:", test_comm[i])
-        print("Predicted Label:", predicted_labels[i][0], "Actual Label:", y_test[i])
-        print("---")
+    print("\nMapping der Vorhersagen: 0 = Real Account, 1 = Bot Account")
+    for tweet in reddit_data["Tweet"].fillna(""):
+        doc = nlp(tweet)
+        pred_label = "BOT" if doc.cats["BOT"] >= doc.cats["REAL"] else "REAL"
+        print(f"Text: {tweet[:50]}... -> Vorhersage: {pred_label}")
 
 def main():
-    # Pfade anpassen
+    # Basisverzeichnis (anpassen, falls erforderlich)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     data_path = os.path.join(base_dir, "data", "twitter_dataset.csv")
-    notes_file_path = os.path.join(base_dir, "data", "community_notes.json")
-
-    # Daten laden und verarbeiten
-    train_text, test_text, train_comm, test_comm, train_numeric, test_numeric, y_train, y_test, numeric_features = load_and_preprocess_data(data_path, notes_file_path)
-
-    # Modell erstellen und trainieren
-    model = build_and_train_model(train_text, train_comm, train_numeric, y_train, numeric_features)
-
-    # Modell bewerten
-    evaluate_model(model, test_text, test_comm, test_numeric, y_test)
-
+    print(f"Lade Kaggle-Daten von: {data_path}")
+    
+    # Daten laden und in spaCy-Format konvertieren
+    data = load_data(data_path)
+    random.shuffle(data)
+    
+    # Aufteilen in Trainings- und Testdaten (z. B. 80/20-Aufteilung)
+    train_data, test_data = train_test_split(data, test_size=0.2, random_state=42)
+    
+    # Lade ein vortrainiertes spaCy Transformer-Modell (für feine Abstimmung)
+    # Hinweis: Für deutsche Tweets z. B. "de_core_news_trf" verwenden
+    nlp = spacy.load("en_core_web_trf")
+    
+    # Falls noch nicht vorhanden, Textklassifikator hinzufügen
+    if "textcat" not in nlp.pipe_names:
+        textcat = nlp.add_pipe("textcat", last=True)
+    else:
+        textcat = nlp.get_pipe("textcat")
+    
+    # Füge die Labels hinzu
+    textcat.add_label("BOT")
+    textcat.add_label("REAL")
+    
+    # Beginne mit dem Feintuning (das Training)
+    optimizer = nlp.resume_training()
+    n_iter = 10  # Anzahl der Trainingsiterationen – je nach Datensatz anpassen
+    print("Beginne das Fine-Tuning...")
+    for i in range(n_iter):
+        losses = {}
+        # Batch-Größe wird progressiv erhöht
+        batches = minibatch(train_data, size=compounding(4.0, 32.0, 1.5))
+        for batch in batches:
+            texts, annotations = zip(*batch)
+            nlp.update(texts, annotations, sgd=optimizer, drop=0.2, losses=losses)
+        print(f"Iteration {i+1}/{n_iter}, Losses: {losses}")
+    
+    # Evaluation auf Testdaten
+    accuracy = evaluate(nlp, test_data)
+    print(f"\nTest Accuracy: {accuracy:.2f}")
+    
+    # Test auf Reddit-Daten (sofern verfügbar)
+    test_on_reddit_data(nlp)
+    
+    # Optional: Speichern des feinabgestimmten spaCy-Modells
+    # output_dir = os.path.join(base_dir, "models", "spacy_finetuned_model")
+    # nlp.to_disk(output_dir)
+    # print(f"Modell wurde unter {output_dir} gespeichert.")
 
 if __name__ == "__main__":
     main()

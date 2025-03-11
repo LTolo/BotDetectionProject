@@ -1,12 +1,14 @@
-# Dieses Skript führt ein Fine-Tuning eines vortrainierten BERT-Modells (bert-base-uncased) zur Erkennung von Bot-Accounts in Twitter-Daten durch.
-# Es lädt einen CSV-Datensatz, teilt ihn in Trainings- und Testdaten auf, tokenisiert die Texte mit dem BERT-Tokenizer,
-# erstellt TensorFlow-Datasets, trainiert das Modell und bewertet es.
+# Dieses Skript führt ein Fine-Tuning eines vortrainierten BERT-Modells (bert-base-uncased) zur Erkennung von Bot-Accounts in Twitter-Daten durch,
+# wobei Community Notes (zusätzliche Textinformationen) basierend auf dem Bot-Label hinzugefügt werden.
+# Es lädt einen CSV-Datensatz und eine JSON-Datei mit Community Notes, teilt die Daten auf, tokenisiert die Texte,
+# trainiert das Modell und bewertet es.
 # Optional testet es das Modell auf Daten, die über die Reddit API abgerufen wurden.
 # Es verwendet die Transformers-Bibliothek von Hugging Face für das Modell und TensorFlow für das Training.
 
 
 import os
 import sys
+import json
 import random
 import pandas as pd
 import tensorflow as tf
@@ -37,13 +39,35 @@ def load_kaggle_data(file_path):
         print(f"Fehler beim Laden der CSV-Datei: {e}")
         raise
 
-def preprocess_data(df):
+def load_community_notes(file_path):
     """
-    Verwendet die 'Tweet'-Spalte als Feature und die 'Bot Label'-Spalte als Ziel.
+    Lädt die Community Notes aus einer JSON-Datei.
+    """
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        print(f"Fehler beim Laden der JSON-Datei: {e}")
+        return None
+
+
+def preprocess_data(df, community_notes):
+    """
+    Fügt Community Notes basierend auf dem Label ('Bot Label') hinzu.
     """
     X = df["Tweet"].fillna("")
     y = df["Bot Label"].values
-    return X, y
+
+    bot_notes = community_notes.get("bot_notes", [])
+    non_bot_notes = community_notes.get("non_bot_notes", [])
+
+    augmented_texts = []
+    for text, label in zip(X, y):
+        note = random.choice(bot_notes if label == 1 else non_bot_notes)
+        augmented_texts.append(f"{text} Note: {note}")
+
+    return augmented_texts, y
 
 def encode_data(texts, tokenizer, max_length=128):
     """
@@ -123,12 +147,15 @@ def test_on_reddit_data(model, tokenizer, max_length=128):
         print(f"Text: {tweet[:50]}... -> Vorhersage: {pred[0]}")
 
 def main():
-    # Pfad zur Kaggle CSV-Datei (ausgehend vom Standort dieses Scripts)
+    # Lade Kaggle-Daten
     kaggle_data_path = os.path.join(base_dir, "data", "twitter_dataset.csv")
-    print(f"Lade Kaggle-Daten von: {kaggle_data_path}")
     df = load_kaggle_data(kaggle_data_path)
-    
-    X, y = preprocess_data(df)
+
+    # Lade Community Notes
+    community_notes_path = os.path.join(base_dir, "data", "community_notes.json")
+    community_notes = load_community_notes(community_notes_path)
+
+    X, y = preprocess_data(df, community_notes)
     
     # Aufteilen in Trainings- und Testdaten (80/20-Aufteilung)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
