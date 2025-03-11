@@ -46,9 +46,7 @@ Dieses Modell verwendet SpaCy für die Textvorverarbeitung und Feature-Extraktio
     *   Bewertung der Modelle anhand von Metriken wie Präzision, Recall und F1-Score.
     *   Vergleich der Leistung von Modellen mit und ohne SpaCy.
 
-5.  **Dashboard:**
-    *   Erstellung eines Dashboards (z.B. mit Streamlit) zur Visualisierung der Ergebnisse.
-    *   Anzeige der wichtigsten Merkmale erkannter Bots.
+
 
 ## Zusammenfassung der Modelle
 
