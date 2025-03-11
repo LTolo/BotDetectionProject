@@ -64,6 +64,5 @@ Dieses Projekt zielt darauf ab, eine effektive Methode zur Bot-Erkennung in sozi
 2.  **Abhängigkeiten installieren:** `pip install -r requirements.txt`
 3.  **Kaggle-Datensatz herunterladen:** (https://www.kaggle.com/datasets/goyaladi/twitter-bot-detection-dataset?resource=download)
 4.  **Reddit API-Zugangsdaten konfigurieren:**
-5.  **Modelle trainieren:** (Zuerst alle Modelle vollständig treinieren bevor das Dashboard gestartet wird)
-6.  **Dashboard starten:**
+5.  **Modelle trainieren:** 
 
