@@ -6,6 +6,9 @@
 
 
 import os
+# Setze die Umgebungsvariable, bevor irgendwelche TensorFlow-/Keras-Module importiert werden
+os.environ["TF_USE_LEGACY_KERAS"] = "True"
+
 import sys
 import random
 import pandas as pd
@@ -68,11 +71,29 @@ def create_tf_dataset(encodings, labels, batch_size=32, shuffle=True):
     dataset = dataset.batch(batch_size)
     return dataset
 
-def train_model(model, train_dataset, val_dataset, epochs=3):
+class TrainingAccuracyCallback(tf.keras.callbacks.Callback):
     """
-    Feintunet das vortrainierte Modell.
+    Callback, der am Ende jeder Epoche die Trainingsgenauigkeit berechnet und ausgibt.
     """
-    history = model.fit(train_dataset, validation_data=val_dataset, epochs=epochs)
+    def __init__(self, train_dataset, y_train):
+        super(TrainingAccuracyCallback, self).__init__()
+        self.train_dataset = train_dataset
+        self.y_train = y_train
+
+    def on_epoch_end(self, epoch, logs=None):
+        predictions = self.model.predict(self.train_dataset)
+        preds = (tf.nn.sigmoid(predictions.logits).numpy() > 0.5).astype(int)
+        acc = accuracy_score(self.y_train.flatten(), preds.flatten())
+        print(f"Epoch {epoch+1} Training Accuracy: {acc:.4f}")
+
+def train_model(model, train_dataset, val_dataset, epochs=3, train_dataset_raw=None, y_train=None):
+    """
+    Feintunet das vortrainierte Modell und zeigt die Trainingsgenauigkeit pro Epoche.
+    """
+    callbacks = []
+    if train_dataset_raw is not None and y_train is not None:
+        callbacks.append(TrainingAccuracyCallback(train_dataset_raw, y_train))
+    history = model.fit(train_dataset, validation_data=val_dataset, epochs=epochs, callbacks=callbacks)
     return history
 
 def evaluate_model(model, dataset, y_true):
@@ -81,7 +102,7 @@ def evaluate_model(model, dataset, y_true):
     """
     predictions = model.predict(dataset).logits
     y_pred = (tf.nn.sigmoid(predictions).numpy() > 0.5).astype(int)
-    accuracy = accuracy_score(y_true, y_pred)
+    accuracy = accuracy_score(y_true.flatten(), y_pred.flatten())
     f1 = f1_score(y_true, y_pred, average="weighted")
     precision = precision_score(y_true, y_pred, average="weighted")
     recall = recall_score(y_true, y_pred, average="weighted")
@@ -134,9 +155,14 @@ def main():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
     # Verwende einen vortrainierten Tokenizer und das zugehörige Modell
-    model_name = "bert-base-uncased"  # ggf. anpassen, z.B. für Deutsch: "bert-base-german-cased"
+    model_name = "bert-base-uncased"  # ggf. anpassen, z.B. "bert-base-german-cased" für Deutsch
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = TFAutoModelForSequenceClassification.from_pretrained(model_name, num_labels=1)  # Binary classification
+    
+    # Verwende den Legacy-Optimizer (Keras 2) dank tf_keras und der gesetzten Umgebungsvariable
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=5e-5)
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
     
     # Encodiere die Texte
     max_length = 128
@@ -148,9 +174,10 @@ def main():
     train_dataset = create_tf_dataset(train_encodings, y_train, batch_size=batch_size, shuffle=True)
     val_dataset = create_tf_dataset(test_encodings, y_test, batch_size=batch_size, shuffle=False)
     
-    # Fine-Tuning des vortrainierten Modells
-    epochs = 3  # Für ein schnelles Fine-Tuning-Beispiel – ggf. erhöhen
-    history = train_model(model, train_dataset, val_dataset, epochs=epochs)
+    # Fine-Tuning des vortrainierten Modells inkl. Trainingsgenauigkeit pro Epoche
+    epochs = 3  # ggf. erhöhen für längeres Training
+    history = train_model(model, train_dataset, val_dataset, epochs=epochs,
+                          train_dataset_raw=train_dataset, y_train=y_train)
     
     # Evaluation auf Testdaten
     evaluate_model(model, val_dataset, y_test)
