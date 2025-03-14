@@ -7,6 +7,9 @@
 
 
 import os
+# Legacy-Modus aktivieren – muss vor jeglichem Import von TensorFlow/Keras erfolgen!
+os.environ["TF_USE_LEGACY_KERAS"] = "True"
+
 import sys
 import json
 import random
@@ -51,7 +54,6 @@ def load_community_notes(file_path):
         print(f"Fehler beim Laden der JSON-Datei: {e}")
         return None
 
-
 def preprocess_data(df, community_notes):
     """
     Fügt Community Notes basierend auf dem Label ('Bot Label') hinzu.
@@ -66,7 +68,6 @@ def preprocess_data(df, community_notes):
     for text, label in zip(X, y):
         note = random.choice(bot_notes if label == 1 else non_bot_notes)
         augmented_texts.append(f"{text} Note: {note}")
-
     return augmented_texts, y
 
 def encode_data(texts, tokenizer, max_length=128):
@@ -74,7 +75,7 @@ def encode_data(texts, tokenizer, max_length=128):
     Encodiert die Texte mithilfe des Tokenizers und gibt ein TensorFlow-kompatibles Dictionary zurück.
     """
     encodings = tokenizer(
-        texts.tolist(),
+        texts,
         truncation=True,
         padding=True,
         max_length=max_length,
@@ -92,11 +93,28 @@ def create_tf_dataset(encodings, labels, batch_size=32, shuffle=True):
     dataset = dataset.batch(batch_size)
     return dataset
 
-def train_model(model, train_dataset, val_dataset, epochs=3):
+class TrainingAccuracyCallback(tf.keras.callbacks.Callback):
+    def __init__(self, train_dataset, y_train):
+        super().__init__()
+        self.train_dataset = train_dataset
+        self.y_train = y_train
+
+    def on_epoch_end(self, epoch, logs=None):
+        predictions = self.model.predict(self.train_dataset).logits
+        # Flache beide Arrays, um sicherzugehen, dass die Formen übereinstimmen
+        y_pred = (tf.nn.sigmoid(predictions).numpy().flatten() > 0.5).astype(int)
+        y_true = self.y_train.flatten()
+        acc = accuracy_score(y_true, y_pred)
+        print(f"Epoch {epoch+1} Training Accuracy (Callback): {acc:.4f}")
+
+def train_model(model, train_dataset, val_dataset, epochs=3, train_dataset_raw=None, y_train=None):
     """
-    Feintunet das vortrainierte Modell.
+    Feintunet das vortrainierte Modell und gibt die Trainingsgenauigkeit pro Epoche aus.
     """
-    history = model.fit(train_dataset, validation_data=val_dataset, epochs=epochs)
+    callbacks = []
+    if train_dataset_raw is not None and y_train is not None:
+        callbacks.append(TrainingAccuracyCallback(train_dataset_raw, y_train))
+    history = model.fit(train_dataset, validation_data=val_dataset, epochs=epochs, callbacks=callbacks)
     return history
 
 def evaluate_model(model, dataset, y_true):
@@ -128,16 +146,13 @@ def test_on_reddit_data(model, tokenizer, max_length=128):
 
     print("\nHole Reddit-Daten...")
     reddit_data = get_reddit_data(subreddit_name="learnpython", limit=10)
-
     if not isinstance(reddit_data, pd.DataFrame):
         reddit_data = pd.DataFrame(reddit_data)
-
     if "Tweet" not in reddit_data.columns:
         print("Reddit-Daten enthalten nicht die erforderliche Spalte ('Tweet').")
         return
 
     print("\nMapping der Vorhersagen: 0 = Real Account, 1 = Bot Account")
-    
     texts = reddit_data["Tweet"].fillna("")
     encodings = encode_data(texts, tokenizer, max_length)
     dataset = tf.data.Dataset.from_tensor_slices(dict(encodings)).batch(32)
@@ -155,15 +170,21 @@ def main():
     community_notes_path = os.path.join(base_dir, "data", "community_notes.json")
     community_notes = load_community_notes(community_notes_path)
 
+    # Preprocessing: Community Notes werden an die Tweets angehängt
     X, y = preprocess_data(df, community_notes)
     
     # Aufteilen in Trainings- und Testdaten (80/20-Aufteilung)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
     # Verwende einen vortrainierten Tokenizer und das zugehörige Modell
-    model_name = "bert-base-uncased"  # ggf. anpassen, z.B. für Deutsch: "bert-base-german-cased"
+    model_name = "bert-base-uncased"  # ggf. anpassen, z.B. "bert-base-german-cased" für Deutsch
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = TFAutoModelForSequenceClassification.from_pretrained(model_name, num_labels=1)  # Binary classification
+    
+    # Kompiliere das Modell mit dem Legacy-Optimizer
+    optimizer = tf.keras.optimizers.legacy.Adam(learning_rate=5e-5)
+    loss = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
     
     # Encodiere die Texte
     max_length = 128
@@ -175,9 +196,10 @@ def main():
     train_dataset = create_tf_dataset(train_encodings, y_train, batch_size=batch_size, shuffle=True)
     val_dataset = create_tf_dataset(test_encodings, y_test, batch_size=batch_size, shuffle=False)
     
-    # Fine-Tuning des vortrainierten Modells
+    # Fine-Tuning des vortrainierten Modells inkl. Ausgabe der Trainingsgenauigkeit pro Epoche
     epochs = 3  # Für ein schnelles Fine-Tuning-Beispiel – ggf. erhöhen
-    history = train_model(model, train_dataset, val_dataset, epochs=epochs)
+    history = train_model(model, train_dataset, val_dataset, epochs=epochs,
+                          train_dataset_raw=train_dataset, y_train=y_train)
     
     # Evaluation auf Testdaten
     evaluate_model(model, val_dataset, y_test)
