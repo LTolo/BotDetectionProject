@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Social Media Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Social Media Demo</h1>
+        <form method="POST">
+            <label for="post_text">Dein Post:</label>
+            <textarea id="post_text" name="post_text" rows="4" placeholder="Schreibe deinen Post hier..." required></textarea>
+            
+            <label for="community_note">Community Note (optional):</label>
+            <textarea id="community_note" name="community_note" rows="2" placeholder="Füge eine Community Note hinzu..."></textarea>
+            
+            <button type="submit">Posten</button>
+        </form>
+        <br>
+        <a href="{{ url_for('posts') }}">Alle Posts anzeigen</a>
+    </div>
+</body>
+</html>

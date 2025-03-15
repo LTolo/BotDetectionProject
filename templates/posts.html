@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Gespeicherte Posts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Gespeicherte Posts</h1>
+        {% if posts %}
+        <div class="posts-list">
+            {% for row in posts %}
+            <div class="post-item">
+                <div class="post-header">
+                    <span class="timestamp">{{ row.timestamp }}</span>
+                </div>
+                <p class="post-content">{{ row.post }}</p>
+                {% if row.community_note %}
+                <p class="community-note"><strong>Community Note:</strong> {{ row.community_note }}</p>
+                {% endif %}
+                <div class="post-footer">
+                    <span class="prediction"><strong>Vorhersage:</strong> {{ row.predicted_label }} (Wahrscheinlichkeit: {{ row.predicted_probability }})</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p>Keine Posts vorhanden.</p>
+        {% endif %}
+        <a href="{{ url_for('index') }}" class="view-posts-link">Zurück zum Posten</a>
+    </div>
+</body>
+</html>
