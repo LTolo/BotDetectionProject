@@ -2,33 +2,35 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Gespeicherte Posts</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <title>Alle Posts</title>
+    <!-- Verweise auf die ausgelagerte CSS-Datei für die Posts-Seite -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Gespeicherte Posts</h1>
+        <h1>Alle Posts</h1>
         {% if posts %}
-        <div class="posts-list">
-            {% for row in posts %}
-            <div class="post-item">
+            {% for post in posts %}
+            <div class="post-box">
                 <div class="post-header">
-                    <span class="timestamp">{{ row.timestamp }}</span>
+                    <span class="timestamp">{{ post.timestamp }}</span>
+                    <span class="label">{{ post.predicted_label }}</span>
                 </div>
-                <p class="post-content">{{ row.post }}</p>
-                {% if row.community_note %}
-                <p class="community-note"><strong>Community Note:</strong> {{ row.community_note }}</p>
-                {% endif %}
+                <div class="post-content">
+                    <p><strong>Post:</strong> {{ post.post }}</p>
+                    {% if post.community_note %}
+                    <p><strong>Community Note:</strong> {{ post.community_note }}</p>
+                    {% endif %}
+                </div>
                 <div class="post-footer">
-                    <span class="prediction"><strong>Vorhersage:</strong> {{ row.predicted_label }} (Wahrscheinlichkeit: {{ row.predicted_probability }})</span>
+                    <span class="probability">Wahrscheinlichkeit: {{ post.predicted_probability }}</span>
                 </div>
             </div>
             {% endfor %}
-        </div>
         {% else %}
-        <p>Keine Posts vorhanden.</p>
+            <p>Keine Posts vorhanden.</p>
         {% endif %}
-        <a href="{{ url_for('index') }}" class="view-posts-link">Zurück zum Posten</a>
+        <a href="{{ url_for('index') }}" class="back-link">Neuen Post erstellen</a>
     </div>
 </body>
 </html>
