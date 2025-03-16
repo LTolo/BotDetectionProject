@@ -1,4 +1,4 @@
-/* Grundlayout für die Index-Seite */
+/* Layout für die Index-Seite */
 body {
     margin: 0;
     padding: 0;
@@ -6,7 +6,6 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
 }
-
 .container {
     width: 90%;
     max-width: 600px;
@@ -16,24 +15,19 @@ body {
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
 h1 {
     color: #333;
     margin-bottom: 20px;
 }
-
-/* Formular-Styles */
 form {
     margin-bottom: 20px;
     text-align: left;
 }
-
 label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
 }
-
 textarea {
     width: 100%;
     padding: 10px;
@@ -42,7 +36,6 @@ textarea {
     border-radius: 4px;
     resize: vertical;
 }
-
 button {
     width: 100%;
     padding: 10px;
@@ -53,12 +46,9 @@ button {
     font-size: 16px;
     cursor: pointer;
 }
-
 button:hover {
     background-color: #0056b3;
 }
-
-/* Back-Link */
 .back-link {
     display: inline-block;
     margin-top: 20px;
@@ -66,7 +56,6 @@ button:hover {
     color: #007BFF;
     font-weight: bold;
 }
-
 .back-link:hover {
     text-decoration: underline;
 }
