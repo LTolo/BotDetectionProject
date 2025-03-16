@@ -8,8 +8,8 @@ from flask import Flask, render_template, request, redirect, url_for
 import tensorflow as tf
 from transformers import TFAutoModelForSequenceClassification, AutoTokenizer
 
-# Konfiguriere Flask-App und gebe den Pfad zu Templates und Static an.
-# Da app.py im Ordner 'demos' liegt, müssen wir die übergeordneten Ordner angeben.
+# Konfiguriere Flask und gib den Pfad zu Templates und Static an.
+# Da app.py im Ordner "demos" liegt, verweisen wir auf die übergeordneten Ordner.
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
 # Modell und Tokenizer laden (ersetze model_name ggf. durch den Pfad deines feinabgestimmten Modells)
@@ -19,7 +19,6 @@ tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = TFAutoModelForSequenceClassification.from_pretrained(model_name, num_labels=1)
 print("Modell und Tokenizer geladen.")
 
-# Hilfsfunktion zur Vorhersage
 def predict_post(text, max_length=128):
     encodings = tokenizer(
         text,
@@ -49,17 +48,15 @@ def index():
         else:
             augmented_text = post_text
 
-        # Vorhersage berechnen
         probability = predict_post(augmented_text)
         predicted_label = "Bot" if probability > 0.5 else "Nicht Bot"
 
-        # Speichere den Post in der CSV-Datei
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(DATA_FILE, "a", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow([timestamp, post_text, community_note, f"{probability:.4f}", predicted_label])
 
-        return redirect(url_for("posts"))  # Direkt zur posts.html umleiten
+        return redirect(url_for("posts"))
     return render_template("index.html")
 
 @app.route("/posts")
@@ -69,13 +66,9 @@ def posts():
         reader = csv.DictReader(f)
         for row in reader:
             posts.append(row)
+    # Sortiere Posts absteigend nach Timestamp
     posts = sorted(posts, key=lambda x: x["timestamp"], reverse=True)
     return render_template("posts.html", posts=posts)
 
 if __name__ == "__main__":
-    # Hinweis: Das Laden des BERT-Modells kann einige Zeit in Anspruch nehmen.
-    # Sobald das Modell geladen ist, wird die App gestartet.
-    print("Starte Flask-App. Bitte gedulde dich bis zum Laden des Modells...")
-    print("App starten: http://127.0.0.1:5000/")
     app.run(debug=True)
-    
