@@ -10,6 +10,8 @@ import os
 os.environ["TF_USE_LEGACY_KERAS"] = "True"
 
 import sys
+# Füge den übergeordneten Ordner zum PYTHONPATH hinzu, damit der Ordner "api" gefunden wird
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import random
 import pandas as pd
 import tensorflow as tf
@@ -20,6 +22,7 @@ from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_sc
 # Versuch, die Reddit API zu importieren
 try:
     from api.reddit_api import get_reddit_data
+    print("Reddit API erfolgreich importiert.")
 except ImportError:
     print("Warnung: reddit_api konnte nicht importiert werden. "
           "Stelle sicher, dass der Ordner 'api' im PYTHONPATH ist.")

@@ -6,6 +6,9 @@
 
 
 import os
+import sys
+# Füge den übergeordneten Ordner zum PYTHONPATH hinzu, damit der Ordner "api" gefunden wird
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 import random
 import spacy
 from spacy.util import minibatch, compounding
@@ -18,6 +21,7 @@ import time
 # Falls vorhanden, versuche die Reddit API zu importieren
 try:
     from api.reddit_api import get_reddit_data
+    print("Reddit API erfolgreich importiert.")
 except ImportError:
     print("Warnung: reddit_api konnte nicht importiert werden. "
           "Stelle sicher, dass der Ordner 'api' im PYTHONPATH ist.")
