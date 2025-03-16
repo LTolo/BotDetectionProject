@@ -1,10 +1,8 @@
-# Dieses Skript trainiert ein neuronales Netzwerk von Grund auf (raw model) zur Erkennung von Bot-Accounts in Twitter-Daten.
-# Es lädt einen CSV-Datensatz, tokenisiert die Textdaten, trainiert ein Bidirectional LSTM-Modell und bewertet es.
-# Optional testet es das Modell auf Daten, die über die Reddit API abgerufen wurden.
-# Es verwendet TensorFlow/Keras für das Modelltraining und scikit-learn für die Evaluation.
-
-
 import os
+import sys
+# Füge den übergeordneten Ordner zum PYTHONPATH hinzu, damit der Ordner "api" gefunden wird
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+
 import pandas as pd
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -23,6 +21,7 @@ from sklearn.metrics import (
 # Versuch, die Reddit API zu importieren
 try:
     from api.reddit_api import get_reddit_data
+    print("Reddit API erfolgreich importiert.")
 except ImportError:
     print("Warnung: reddit_api konnte nicht importiert werden. "
           "Stelle sicher, dass der Ordner 'api' im PYTHONPATH ist.")
@@ -72,9 +71,9 @@ def train_model(X_train_pad, y_train, max_words=10000, embedding_dim=16, max_len
     aber als Raw-Modell von Grund auf trainiert wird.
     """
     model = Sequential([
-        # Eingabe: Sequenzen mit Längen max_len
+        # Eingabe: Sequenzen mit Länge max_len
         Embedding(max_words, embedding_dim, input_length=max_len),
-        # Hinzufügen eines Bidirectional LSTM für mehr Kontext-Erfassung (raw, aber komplexer)
+        # Bidirectional LSTM für mehr Kontext-Erfassung
         Bidirectional(LSTM(64, return_sequences=True)),
         GlobalAveragePooling1D(),
         Dropout(0.4),
