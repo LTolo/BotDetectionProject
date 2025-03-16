@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Alle Posts</title>
-    <!-- Verweise auf die ausgelagerte CSS-Datei für die Posts-Seite -->
     <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
 </head>
 <body>
@@ -14,6 +13,9 @@
             <div class="post-box">
                 <div class="post-header">
                     <span class="timestamp">{{ post.timestamp }}</span>
+                    {% if post.source and post.source != "local" %}
+                    <span class="source">({{ post.source }})</span>
+                    {% endif %}
                     <span class="label">{{ post.predicted_label }}</span>
                 </div>
                 <div class="post-content">
