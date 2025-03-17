@@ -1,5 +1,10 @@
 timestamp,post,community_note,predicted_probability,predicted_label
-2025-03-16 13:36:21,post,,0.5115,Bot
+2025-03-16 13:36:21,post,test2,0.5115,Bot
 2025-03-16 13:36:21,post,,0.5115,Bot
 2025-03-16 14:05:13,post,,0.5576,Bot
 2025-03-16 14:40:25,heute ist ein schöner tag,,0.4142,Nicht Bot
+2025-03-16 21:32:19,Heute ist kein schöner tag,,0.5745,Bot
+2025-03-17 16:43:46,Heute ist es mir viel zu kalt,test1,0.4667,Nicht Bot
+2025-03-17 16:49:10,test,test0 || test3,0.3861,Nicht Bot
+2025-03-17 18:28:01,heute hat es geschneit,"das stimmt, scheint kein bot zu sein",0.4082,Nicht Bot
+2025-03-17 20:35:13,ich mach mir jetzt burger,sehr schön || wahrscheinlich ein bot,0.5843,Bot
