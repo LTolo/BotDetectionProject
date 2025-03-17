@@ -5,7 +5,7 @@ body {
     background-color: #f4f4f4;
     font-family: Arial, sans-serif;
     text-align: center;
-    transition: background-color 0.3s, color 0.3s; /* Übergang für Dark Mode */
+    transition: background-color 0.3s, color 0.3s;
 }
 
 body.dark-mode {
@@ -21,8 +21,8 @@ body.dark-mode {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    position: relative; /* Wichtig für die Positionierung des Dark Mode Toggles */
-    transition: background-color 0.3s, box-shadow 0.3s; /* Übergang für Dark Mode */
+    position: relative;
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
 
 body.dark-mode .container {
@@ -33,7 +33,7 @@ body.dark-mode .container {
 h1 {
     color: #333;
     margin-bottom: 20px;
-    transition: color 0.3s; /* Übergang für Dark Mode */
+    transition: color 0.3s;
 }
 
 body.dark-mode h1 {
@@ -49,7 +49,7 @@ label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
-    transition: color 0.3s; /* Übergang für Dark Mode */
+    transition: color 0.3s;
 }
 
 body.dark-mode label {
@@ -65,7 +65,7 @@ textarea {
     resize: vertical;
     background-color: #fff;
     color: #333;
-    transition: background-color 0.3s, border 0.3s, color 0.3s; /* Übergang für Dark Mode */
+    transition: background-color 0.3s, border 0.3s, color 0.3s;
 }
 
 body.dark-mode textarea {
@@ -83,7 +83,7 @@ button {
     border-radius: 4px;
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s; /* Übergang für Dark Mode */
+    transition: background-color 0.3s;
 }
 
 button:hover {
@@ -104,7 +104,7 @@ body.dark-mode button:hover {
     text-decoration: none;
     color: #007BFF;
     font-weight: bold;
-    transition: color 0.3s; /* Übergang für Dark Mode */
+    transition: color 0.3s;
 }
 
 body.dark-mode .back-link {
@@ -116,14 +116,14 @@ body.dark-mode .back-link {
 }
 
 .dark-mode-toggle {
-    position: fixed; /* Geändert zu fixed für absolute Positionierung */
+    position: fixed;
     top: 10px;
     right: 10px;
     cursor: pointer;
     font-size: 20px;
     color: #333;
     transition: color 0.3s;
-    z-index: 1000; /* Stellt sicher, dass es über allem anderen liegt */
+    z-index: 1000;
 }
 
 body.dark-mode .dark-mode-toggle {

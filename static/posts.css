@@ -1,11 +1,18 @@
-/* Layout für die Posts-Seite */
+/* Grundlayout für die Posts-Seite */
 body {
     margin: 0;
     padding: 0;
     background-color: #f4f4f4;
     font-family: Arial, sans-serif;
     text-align: center;
+    transition: background-color 0.3s, color 0.3s;
 }
+
+body.dark-mode {
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
 .container {
     width: 90%;
     max-width: 800px;
@@ -14,12 +21,25 @@ body {
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s, box-shadow 0.3s;
 }
+
+body.dark-mode .container {
+    background-color: #1e1e1e;
+    box-shadow: 0 2px 8px rgba(255, 255, 255, 0.1);
+}
+
 h1 {
     color: #333;
     margin-bottom: 20px;
+    transition: color 0.3s;
 }
-/* Hellblauer Kasten für jeden Post */
+
+body.dark-mode h1 {
+    color: #e0e0e0;
+}
+
+/* Post-Box: Hellblauer Kasten */
 .post-box {
     background-color: #e0f7ff;
     border: 1px solid #b3e5fc;
@@ -28,7 +48,15 @@ h1 {
     margin: 20px auto;
     padding: 15px 20px;
     text-align: left;
+    transition: background-color 0.3s, border 0.3s, box-shadow 0.3s;
 }
+
+body.dark-mode .post-box {
+    background-color: #333;
+    border: 1px solid #555;
+    box-shadow: 0 2px 6px rgba(255, 255, 255, 0.1);
+}
+
 .post-header {
     display: flex;
     justify-content: space-between;
@@ -37,16 +65,35 @@ h1 {
     margin-bottom: 10px;
     font-size: 0.9em;
     color: #555;
+    transition: border-color 0.3s, color 0.3s;
 }
+
+body.dark-mode .post-header {
+    border-bottom-color: #555;
+    color: #999;
+}
+
 .post-header .source {
     font-style: italic;
     color: #777;
+    transition: color 0.3s;
 }
+
+body.dark-mode .post-header .source {
+    color: #ccc;
+}
+
 .post-content p {
     margin: 5px 0;
     line-height: 1.5;
     color: #333;
+    transition: color 0.3s;
 }
+
+body.dark-mode .post-content p {
+    color: #e0e0e0;
+}
+
 .post-footer {
     border-top: 1px solid #b3e5fc;
     margin-top: 10px;
@@ -54,14 +101,59 @@ h1 {
     font-size: 0.9em;
     color: #777;
     text-align: right;
+    transition: border-color 0.3s, color 0.3s;
 }
+
+body.dark-mode .post-footer {
+    border-top-color: #555;
+    color: #ccc;
+}
+
 .back-link {
     display: inline-block;
     margin-top: 20px;
     text-decoration: none;
     color: #007BFF;
     font-weight: bold;
+    transition: color 0.3s;
 }
+
+body.dark-mode .back-link {
+    color: #64b5f6;
+}
+
 .back-link:hover {
     text-decoration: underline;
+}
+
+.toggle-link {
+    display: inline-block;
+    margin-bottom: 20px;
+    text-decoration: none;
+    color: #007BFF;
+    font-weight: bold;
+    transition: color 0.3s;
+}
+
+body.dark-mode .toggle-link {
+    color: #64b5f6;
+}
+
+.toggle-link:hover {
+    text-decoration: underline;
+}
+
+.dark-mode-toggle {
+    position: fixed; /* Geändert zu fixed für absolute Positionierung */
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    color: #333;
+    transition: color 0.3s;
+    z-index: 1000; /* Stellt sicher, dass es über allem anderen liegt */
+}
+
+body.dark-mode .dark-mode-toggle {
+    color: #e0e0e0;
 }
