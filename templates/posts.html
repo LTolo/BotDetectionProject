@@ -4,29 +4,49 @@
     <meta charset="UTF-8">
     <title>Alle Posts</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
+    <div class="dark-mode-toggle">
+        <i id="darkModeIcon" class="fas fa-moon"></i>
+    </div>
     <div class="container">
         <h1>Alle Posts</h1>
+        {% if show_details %}
+            <p><a href="{{ url_for('posts', details='false') }}" class="toggle-link">Details ausblenden</a></p>
+        {% else %}
+            <p><a href="{{ url_for('posts', details='true') }}" class="toggle-link">Details anzeigen</a></p>
+        {% endif %}
+
         {% if posts %}
             {% for post in posts %}
             <div class="post-box">
                 <div class="post-header">
                     <span class="timestamp">{{ post.timestamp }}</span>
                     {% if post.source and post.source != "local" %}
-                    <span class="source">({{ post.source }})</span>
+                        <span class="source">({{ post.source }})</span>
                     {% endif %}
-                    <span class="label">{{ post.predicted_label }}</span>
+                    {% if show_details %}
+                        <span class="label">{{ post.predicted_label }}</span>
+                    {% endif %}
                 </div>
                 <div class="post-content">
                     <p><strong>Post:</strong> {{ post.post }}</p>
-                    {% if post.community_note %}
-                    <p><strong>Community Note:</strong> {{ post.community_note }}</p>
+                    {% if show_details and post.community_note %}
+                        <p><strong>Community Notes:</strong> {{ post.community_note }}</p>
+                        <p><a href="{{ url_for('add_note', timestamp=post.timestamp) }}">Community Note hinzufügen</a></p>
+                    {% elif not show_details %}
+                        {% else %}
+                        {% if show_details %}
+                            <p><a href="{{ url_for('add_note', timestamp=post.timestamp) }}">Community Note hinzufügen</a></p>
+                        {% endif %}
                     {% endif %}
                 </div>
+                {% if show_details %}
                 <div class="post-footer">
                     <span class="probability">Wahrscheinlichkeit: {{ post.predicted_probability }}</span>
                 </div>
+                {% endif %}
             </div>
             {% endfor %}
         {% else %}
@@ -34,5 +54,20 @@
         {% endif %}
         <a href="{{ url_for('index') }}" class="back-link">Neuen Post erstellen</a>
     </div>
+    <script>
+        const darkModeIcon = document.getElementById('darkModeIcon');
+        const body = document.body;
+
+        darkModeIcon.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if (body.classList.contains('dark-mode')) {
+                darkModeIcon.classList.remove('fa-moon');
+                darkModeIcon.classList.add('fa-sun');
+            } else {
+                darkModeIcon.classList.remove('fa-sun');
+                darkModeIcon.classList.add('fa-moon');
+            }
+        });
+    </script>
 </body>
 </html>
