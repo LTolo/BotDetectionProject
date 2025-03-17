@@ -1,3 +1,5 @@
+# Beschreibung: Flask-App, die eine einfache Benutzeroberfläche für die Klassifizierung von Posts als Bot oder Nicht-Bot bereitstellt.
+
 import os
 import sys
 import json
