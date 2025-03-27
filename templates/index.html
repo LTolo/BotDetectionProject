@@ -4,40 +4,109 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Neuen Post erstellen</title>
+    <title>Social Media App</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='index.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <div class="dark-mode-toggle">
-            <i id="darkModeIcon" class="fas fa-moon"></i>
+    <div id="welcome-overlay" class="welcome-overlay">
+        <div class="welcome-content">
+            <h1>Welcome to SocialApp</h1>
+            <p>the App for real People</p>
         </div>
-        <h1>Neuen Post erstellen</h1>
-        <form method="POST">
-            <label for="post_text">Dein Post:</label>
-            <textarea id="post_text" name="post_text" rows="4" placeholder="Schreibe deinen Post hier..." required></textarea>
-
-            <label for="community_note">Community Note (optional):</label>
-            <textarea id="community_note" name="community_note" rows="2" placeholder="Füge eine Community Note hinzu..."></textarea>
-
-            <button type="submit">Posten</button>
-        </form>
-        <a href="{{ url_for('posts') }}" class="back-link">Alle Posts ansehen</a>
     </div>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="{{ url_for('posts') }}" class="nav-brand" id="nav-brand">
+                <i class="fas fa-globe"></i>
+                SocialApp
+            </a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for('posts') }}" class="nav-link">
+                <i class="fas fa-home"></i>
+                Feed
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-link active">
+                <i class="fas fa-plus-circle"></i>
+                Neuer Post
+            </a>
+            <div class="dark-mode-toggle">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="content-wrapper">
+            <div class="create-post-container">
+                <div class="post-input">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=create" alt="Profile" class="profile-pic">
+                    <div class="post-form">
+                        <h2>Neuen Post erstellen</h2>
+                        <form method="POST">
+                            <textarea id="post_text" name="post_text" rows="3" placeholder="Was möchtest du teilen?" required></textarea>
+                            <div class="post-actions">
+                                <div class="post-attachments">
+                                    <button type="button" class="attachment-btn">
+                                        <i class="fas fa-image"></i>
+                                    </button>
+                                    <button type="button" class="attachment-btn">
+                                        <i class="fas fa-link"></i>
+                                    </button>
+                                </div>
+                                <button type="submit" class="post-btn">Posten</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="community-note-section">
+                <h3>Community Note hinzufügen</h3>
+                <form method="POST" class="note-form">
+                    <textarea id="community_note" name="community_note" rows="2" placeholder="Füge eine Community Note hinzu..."></textarea>
+                    <button type="submit" class="note-btn">Note speichern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         const darkModeIcon = document.getElementById('darkModeIcon');
         const body = document.body;
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const navBrand = document.getElementById('nav-brand');
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            darkModeIcon.classList.remove('fa-moon');
+            darkModeIcon.classList.add('fa-sun');
+        }
 
         darkModeIcon.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
             if (body.classList.contains('dark-mode')) {
                 darkModeIcon.classList.remove('fa-moon');
                 darkModeIcon.classList.add('fa-sun');
+                localStorage.setItem('darkMode', 'true');
             } else {
                 darkModeIcon.classList.remove('fa-sun');
                 darkModeIcon.classList.add('fa-moon');
+                localStorage.setItem('darkMode', 'false');
             }
+        });
+
+        // Handle welcome message
+        navBrand.addEventListener('click', (e) => {
+            e.preventDefault();
+            welcomeOverlay.classList.add('show');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('posts') }}";
+            }, 2000);
         });
     </script>
 </body>

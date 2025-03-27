@@ -4,71 +4,193 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>Alle Posts</title>
+    <title>Social Media App - Feed</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
     <link rel="stylesheet" href="{{ url_for('static', filename='posts.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="dark-mode-toggle">
-        <i id="darkModeIcon" class="fas fa-moon"></i>
+    <div id="welcome-overlay" class="welcome-overlay">
+        <div class="welcome-content">
+            <h1>Welcome to SocialApp</h1>
+            <p>the App for real People</p>
+        </div>
     </div>
-    <div class="container">
-        <h1>Alle Posts</h1>
-        {% if show_details %}
-            <p><a href="{{ url_for('posts', details='false') }}" class="toggle-link">Details ausblenden</a></p>
-        {% else %}
-            <p><a href="{{ url_for('posts', details='true') }}" class="toggle-link">Details anzeigen</a></p>
-        {% endif %}
 
-        {% if posts %}
-            {% for post in posts %}
-            <div class="post-box">
-                <div class="post-header">
-                    <span class="timestamp">{{ post.timestamp }}</span>
-                    {% if post.source and post.source != "local" %}
-                        <span class="source">({{ post.source }})</span>
-                    {% endif %}
-                    {% if show_details %}
-                        <span class="label">{{ post.predicted_label }}</span>
-                    {% endif %}
-                </div>
-                <div class="post-content">
-                    <p><strong>Post:</strong> {{ post.post }}</p>
-                    {% if show_details and post.community_note %}
-                        <p><strong>Community Notes:</strong> {{ post.community_note }}</p>
-                        <p><a href="{{ url_for('add_note', timestamp=post.timestamp) }}">Community Note hinzufügen</a></p>
-                    {% elif not show_details %}
-                        {% else %}
-                        {% if show_details %}
-                            <p><a href="{{ url_for('add_note', timestamp=post.timestamp) }}">Community Note hinzufügen</a></p>
-                        {% endif %}
-                    {% endif %}
-                </div>
-                {% if show_details %}
-                <div class="post-footer">
-                    <span class="probability">Wahrscheinlichkeit: {{ post.predicted_probability }}</span>
-                </div>
-                {% endif %}
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="{{ url_for('posts') }}" class="nav-brand" id="nav-brand">
+                <i class="fas fa-globe"></i>
+                SocialApp
+            </a>
+        </div>
+        <div class="nav-right">
+            <a href="{{ url_for('posts') }}" class="nav-link active">
+                <i class="fas fa-home"></i>
+                Feed
+            </a>
+            <a href="{{ url_for('index') }}" class="nav-link">
+                <i class="fas fa-plus-circle"></i>
+                Neuer Post
+            </a>
+            <div class="dark-mode-toggle">
+                <i id="darkModeIcon" class="fas fa-moon"></i>
             </div>
-            {% endfor %}
-        {% else %}
-            <p>Keine Posts vorhanden.</p>
-        {% endif %}
-        <a href="{{ url_for('index') }}" class="back-link">Neuen Post erstellen</a>
+        </div>
+    </nav>
+
+    <div class="main-container">
+        <div class="content-wrapper">
+            <div class="feed-header">
+                <h1>Feed</h1>
+                <div class="view-toggle">
+                    {% if show_details %}
+                        <a href="{{ url_for('posts', details='false') }}" class="toggle-btn">
+                            <i class="fas fa-eye-slash"></i>
+                            Details ausblenden
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('posts', details='true') }}" class="toggle-btn">
+                            <i class="fas fa-eye"></i>
+                            Details anzeigen
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if posts %}
+                {% for post in posts %}
+                <div class="post-card">
+                    <div class="post-header">
+                        <div class="post-author">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed={{ post.timestamp }}" alt="Profile" class="profile-pic">
+                            <div class="post-info">
+                                <div class="author-name">User</div>
+                                <div class="post-meta">
+                                    <span class="timestamp">{{ post.timestamp }}</span>
+                                    {% if post.source and post.source != "local" %}
+                                        <span class="source">({{ post.source }})</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if show_details %}
+                            <div class="post-label {{ 'bot' if post.predicted_label == 'Bot' else 'human' }}">
+                                {{ post.predicted_label }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="post-content">
+                        <p>{{ post.post }}</p>
+                        {% if show_details and post.community_note %}
+                            <div class="community-note">
+                                <div class="note-header">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Community Notes</span>
+                                </div>
+                                <ul class="note-list">
+                                    {% for note in post.community_note.split('||') %}
+                                        {% if note.strip() %}
+                                            <li>{{ note.strip() }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        {% if show_details %}
+                            <div class="note-actions">
+                                <a href="{{ url_for('add_note', timestamp=post.timestamp) }}" class="add-note-btn">
+                                    <i class="fas fa-plus-circle"></i>
+                                    Community Note hinzufügen
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="post-footer">
+                        <div class="post-actions">
+                            <button class="action-btn like-btn" data-liked="false">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span>Gefällt mir</span>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-comment"></i>
+                                <span>Kommentieren</span>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-share"></i>
+                                <span>Teilen</span>
+                            </button>
+                        </div>
+                        {% if show_details %}
+                            <div class="post-stats">
+                                <span class="probability">Wahrscheinlichkeit: {{ post.predicted_probability }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-posts">
+                    <i class="fas fa-newspaper"></i>
+                    <p>Keine Posts vorhanden.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
+
     <script>
         const darkModeIcon = document.getElementById('darkModeIcon');
         const body = document.body;
+        const welcomeOverlay = document.getElementById('welcome-overlay');
+        const navBrand = document.getElementById('nav-brand');
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            body.classList.add('dark-mode');
+            darkModeIcon.classList.remove('fa-moon');
+            darkModeIcon.classList.add('fa-sun');
+        }
 
         darkModeIcon.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
             if (body.classList.contains('dark-mode')) {
                 darkModeIcon.classList.remove('fa-moon');
                 darkModeIcon.classList.add('fa-sun');
+                localStorage.setItem('darkMode', 'true');
             } else {
                 darkModeIcon.classList.remove('fa-sun');
                 darkModeIcon.classList.add('fa-moon');
+                localStorage.setItem('darkMode', 'false');
             }
+        });
+
+        // Handle welcome message
+        navBrand.addEventListener('click', (e) => {
+            e.preventDefault();
+            welcomeOverlay.classList.add('show');
+            setTimeout(() => {
+                window.location.href = "{{ url_for('posts') }}";
+            }, 2000);
+        });
+
+        // Handle like button clicks
+        document.querySelectorAll('.like-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const isLiked = button.getAttribute('data-liked') === 'true';
+                button.setAttribute('data-liked', !isLiked);
+                
+                if (!isLiked) {
+                    button.classList.add('liked');
+                    button.querySelector('i').classList.remove('fa-thumbs-up');
+                    button.querySelector('i').classList.add('fa-thumbs-up', 'fas');
+                } else {
+                    button.classList.remove('liked');
+                    button.querySelector('i').classList.remove('fas');
+                    button.querySelector('i').classList.add('far');
+                }
+            });
         });
     </script>
 </body>
