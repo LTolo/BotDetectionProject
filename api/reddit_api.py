@@ -3,9 +3,9 @@ import time
 import pandas as pd
 
 # Ersetze mit deinen eigenen Reddit API Anmeldedaten
-CLIENT_ID = '0aMNpyoCTXiRFguwg3w61w'
-CLIENT_SECRET = 'MwFkNHDYYowE3hbzsvxGmxZGyCNvFg'
-USER_AGENT = 'bot_detection_project_v1.0_by_u/Substantial_Salad992'
+CLIENT_ID = 'YourClientID'                                          #You need your own Reddit API
+CLIENT_SECRET = 'YourClientSecret'                                  #You need your own Reddit API
+USER_AGENT = 'YourUseerAgent'                                       #You need your own Reddit API
  
 reddit = praw.Reddit(client_id=CLIENT_ID,
                      client_secret=CLIENT_SECRET,
